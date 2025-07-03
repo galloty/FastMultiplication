@@ -64,9 +64,8 @@ public:
 	static const GF root_nth(const uint32_t n) { return GF(_primroot).pow((_p - 1) / n); }
 };
 
-
 // P = P^2 mod R, where R = x^m - r
-static void square_fast(GF * const P, const size_t j, const size_t m, const size_t n)
+static void square_fast(GF * const P, const size_t j, const size_t m, const size_t s)
 {
 	if (m == 1) { P[0] *= P[0]; return; } 	// P is a scalar
 
@@ -86,7 +85,7 @@ static void square_fast(GF * const P, const size_t j, const size_t m, const size
 		}
 
 		// P1 = P^2 mod R1, P2 = P^2 mod R2 => divide and conquer
-		square_fast(P0, j, m / 2, n); square_fast(P1, j + n / m, m / 2, n);
+		square_fast(P0, j + 0 * s, m / 2, s * 2); square_fast(P1, j + 1 * s, m / 2, s * 2);
 
 		// Chinese remainder theorem or simply the inverse of direct butterfly
 		const GF inv2 = GF(2u).invert(), invr0 = r0.invert();
@@ -115,7 +114,7 @@ static void square_fast(GF * const P, const size_t j, const size_t m, const size
 		}
 
 		// Pi = P^2 mod Ri => divide and conquer
-		square_fast(P0, j, m / 3, n); square_fast(P1, j + n / m, m / 3, n); square_fast(P2, j + 2 * n / m, m / 3, n);
+		square_fast(P0, j + 0 * s, m / 3, s * 3); square_fast(P1, j + 1 * s, m / 3, s * 3); square_fast(P2, j + 2 * s, m / 3, s * 3);
 
 		// Chinese remainder theorem or simply the inverse of direct butterfly
 		const GF inv3 = GF(3u).invert(), invr0 = r0.invert(), invr02 = invr0 * invr0;
@@ -149,8 +148,8 @@ static void square_fast(GF * const P, const size_t j, const size_t m, const size
 		}
 
 		// Pi = P^2 mod Ri => divide and conquer
-		square_fast(P0, j, m / 5, n); square_fast(P1, j + n / m, m / 5, n); square_fast(P2, j + 2 * n / m, m / 5, n);
-		square_fast(P3, j + 3 * n / m, m / 5, n); square_fast(P4, j + 4 * n / m, m / 5, n);
+		square_fast(P0, j + 0 * s, m / 5, s * 5); square_fast(P1, j + 1 * s, m / 5, s * 5); square_fast(P2, j + 2 * s, m / 5, s * 5);
+		square_fast(P3, j + 3 * s, m / 5, s * 5); square_fast(P4, j + 4 * s, m / 5, s * 5);
 
 		// Chinese remainder theorem or simply the inverse of direct butterfly
 		const GF inv5 = GF(5u).invert(), invr0 = r0.invert(), invr02 = invr0 * invr0, invr03 = invr0 * invr02, invr04 = invr02 * invr02;
@@ -221,7 +220,7 @@ int main()
 	// display(Q, n);
 	// std::cout << std::endl;
 
-	square_fast(P, 0, n, n);
+	square_fast(P, 0, n, 1);	// s = n / m
 	// std::cout << " = ";
 	// display(P, n);
 	// std::cout << std::endl;
