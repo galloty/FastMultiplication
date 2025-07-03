@@ -5,9 +5,9 @@
 Fast integer multiplication is an algorithm able to perform the multiplication of two *n*-digit integers using *O*(*n*&nbsp;log&nbsp;*⁡n*) operations.
 
 Modular multiplication of polynomials is the basis of this method.  
-A complex approach is often used: the product can be rewritten as a cyclic convolution and is evaluated using Fast Fourier Transforms. It is unnecessary and the purpose of this project is to demystify the fast multiplication for large integers.
+An intricate method is often used: the product can be rewritten as a cyclic convolution and is evaluated using Fast Fourier Transforms. It is unnecessary and the purpose of this project is to demystify the fast multiplication for large integers.
 
-Fast modular multiplication of polynomials is a divide-and-conquer algorithm, where the Chinese remainder theorem is applied recursively. This method is described here: starting from a simple implementation of the mathematical relation, a list of elementary programs illustrates how it can be improved.
+Fast modular multiplication of polynomials is a divide-and-conquer algorithm, where the Chinese remainder theorem is applied recursively. This method is described here: starting from a simple implementation of the mathematical relation, a list of elementary programs illustrates how it can be extended and improved.
 
 ## [*fastMul_rec.cpp*](fastMul_rec.cpp)
 

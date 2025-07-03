@@ -99,7 +99,8 @@ static void square_fast(GF * const P, const size_t j, const size_t m, const size
 	else if (m % 3 == 0)
 	{
 		// R = R0 * R1 * R2, where Ri = x^{m/3} - ri
-		const GF J = GF::root_nth(3u), J2 = J * J, r0 = GF::root_7(m / 3) * GF::root_1(j * m / 3);	// ri = J^i * r0
+		static const GF J = GF::root_nth(3u), J2 = J * J;
+		const GF r0 = GF::root_7(m / 3) * GF::root_1(j * m / 3);	// ri = J^i * r0
 		const GF r02 = r0 * r0;
 
 		// Pi = P mod Ri
@@ -129,7 +130,7 @@ static void square_fast(GF * const P, const size_t j, const size_t m, const size
 	else if (m % 5 == 0)
 	{
 		// R = R0 * R1 * R2 * R3 * R4, where Ri = x^{m/3} - ri
-		const GF K = GF::root_nth(5u), K2 = K * K, K3 = K * K2, K4 = K2 * K2;
+		static const GF K = GF::root_nth(5u), K2 = K * K, K3 = K * K2, K4 = K2 * K2;
 		const GF r0 = GF::root_7(m / 5) * GF::root_1(j * m / 5);	// ri = K^i * r0
 		const GF r02 = r0 * r0, r03 = r0 * r02, r04 = r02 * r02;
 
