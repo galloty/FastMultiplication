@@ -9,7 +9,7 @@ A complex approach is often used: the product can be rewritten as a cyclic convo
 
 Fast modular multiplication of polynomials is a divide-and-conquer algorithm, where the Chinese remainder theorem is applied recursively. This method is described here: starting from a simple implementation of the mathematical relation, a list of elementary programs illustrates how it can be improved.
 
-## *fastMul_rec.cpp*
+## [*fastMul_rec.cpp*](fastMul_rec.cpp)
 
 The recursion is applied to compute *P*(*x*)<sup>2</sup> mod&nbsp;*x*<sup>8</sup>&nbsp;-&nbsp;7, where *P* is a polynomial of degree 8-1. The field is the complex numbers. The Chinese remainder theorem for polynomials is evaluated: at each step, *P*(*x*)<sup>2</sup> mod&nbsp;*x*<sup>2*m*</sup>&nbsp;-&nbsp;*r*<sup>2*m*</sup> is calculated from *P*(*x*)<sup>2</sup> mod&nbsp;*x*<sup>*m*</sup>&nbsp;-&nbsp;*r*<sup>*m*</sup> and *P*(*x*)<sup>2</sup> mod&nbsp;*x*<sup>*m*</sup>&nbsp;+&nbsp;*r*<sup>*m*</sup>. The last step is Lagrange interpolation and we have *P*(*x*) mod&nbsp;*x*&nbsp;-&nbsp;*r* = *P*(*r*).
 
