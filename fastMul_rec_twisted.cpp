@@ -65,14 +65,14 @@ public:
 };
 
 // P = P^2 mod R, where R = x^m - r
-static void square_fast(GF * const P, const size_t j, const size_t m, const size_t s)
+static void square_fast(GF * const P, const size_t m, const size_t s)
 {
 	if (m == 1) { P[0] *= P[0]; return; } 	// P is a scalar
 
 	if (m % 2 == 0)
 	{
 		// R = R0 * R1, where Ri = x^{m/2} - ri
-		const GF r0 = GF::root_7(m / 2) * GF::root_1(j * m / 2);	// r1 = -r0;
+		const GF r0 = GF::root_7(m / 2);	// r1 = -r0;
  
 		// Pi = P mod Ri: if P = a[0] + a[1].x + ... then Pi mod (x^{m/2} - ri) = (a[0] + ri * a[m/2]) + ...
 		GF * const P0 = &P[0 * m / 2]; GF * const P1 = &P[1 * m / 2];
@@ -81,22 +81,18 @@ static void square_fast(GF * const P, const size_t j, const size_t m, const size
 		{
 			const GF u0 = P0[i], u1 = r0 * P1[i];
 			P0[i] = u0 + u1;
-			P1[i] = u0 - u1;
+			// R1 = x^{m/2} + r0, P1 must be twisted such that R1' = x^{m/2} - r0
+			P1[i] = (u0 - u1) * GF::root_1(i * s);
 		}
 
-		// R1 = x^{m/2} + r0, P1 must be twisted such that R1' = x^{m/2} - r0
-		for (size_t i = 0; i < m / 2; ++i) P1[i] *= GF::root_1(s * i);
-
 		// P1 = P^2 mod R1, P2 = P^2 mod R2 => divide and conquer
-		square_fast(P0, j + 0 * s, m / 2, s * 2); square_fast(P1, j /*+ 1 * s*/, m / 2, s * 2);
-
-		for (size_t i = 0; i < m / 2; ++i) P1[i] *= GF::root_1(s * i).invert();	// untwist
+		square_fast(P0, m / 2, s * 2); square_fast(P1, m / 2, s * 2);
 
 		// Chinese remainder theorem or simply the inverse of direct butterfly
 		const GF inv2 = GF(2u).invert(), invr0 = r0.invert();
 		for (size_t i = 0; i < m / 2; ++i)
 		{
-			const GF u0 = P0[i], u1 = P1[i];
+			const GF u0 = P0[i], u1 = P1[i] *= GF::root_1(i * s).invert();	// untwist;
 			P0[i] = (u1 + u0) * inv2;
 			P1[i] = (u0 - u1) * inv2 * invr0;
 		}
@@ -105,7 +101,7 @@ static void square_fast(GF * const P, const size_t j, const size_t m, const size
 	{
 		// R = R0 * R1 * R2, where Ri = x^{m/3} - ri
 		static const GF J = GF::root_nth(3u), J2 = J * J;
-		const GF r0 = GF::root_7(m / 3) * GF::root_1(j * m / 3);	// ri = J^i * r0
+		const GF r0 = GF::root_7(m / 3);	// ri = J^i * r0
 		const GF r02 = r0 * r0;
 
 		// Pi = P mod Ri
@@ -115,25 +111,19 @@ static void square_fast(GF * const P, const size_t j, const size_t m, const size
 		{
 			const GF u0 = P0[i], u1 = r0 * P1[i], u2 = r02 * P2[i];
 			P0[i] = u0 +      u1 +      u2;
-			P1[i] = u0 + J  * u1 + J2 * u2;
-			P2[i] = u0 + J2 * u1 + J  * u2;
+			// P1 and P2 are twisted such that R1' = R2' = x^{m/3} - r0
+			P1[i] = (u0 + J  * u1 + J2 * u2) * GF::root_1(i * 1 * s);
+			P2[i] = (u0 + J2 * u1 + J  * u2) * GF::root_1(i * 2 * s);
 		}
 
-		// P1 and P2 are twisted such that R1' = R2' = x^{m/3} - r0
-		for (size_t i = 0; i < m / 3; ++i) P1[i] *= GF::root_1(1 * s * i);
-		for (size_t i = 0; i < m / 3; ++i) P2[i] *= GF::root_1(2 * s * i);
-
 		// Pi = P^2 mod Ri => divide and conquer
-		square_fast(P0, j + 0 * s, m / 3, s * 3); square_fast(P1, j /*+ 1 * s*/, m / 3, s * 3); square_fast(P2, j /*+ 2 * s*/, m / 3, s * 3);
-
-		for (size_t i = 0; i < m / 3; ++i) P1[i] *= GF::root_1(1 * s * i).invert();	// untwist
-		for (size_t i = 0; i < m / 3; ++i) P2[i] *= GF::root_1(2 * s * i).invert();	;
+		square_fast(P0, m / 3, s * 3); square_fast(P1, m / 3, s * 3); square_fast(P2, m / 3, s * 3);
 
 		// Chinese remainder theorem or simply the inverse of direct butterfly
 		const GF inv3 = GF(3u).invert(), invr0 = r0.invert(), invr02 = invr0 * invr0;
 		for (size_t i = 0; i < m / 3; ++i)
 		{
-			const GF u0 = P0[i], u1 = P1[i], u2 = P2[i];
+			const GF u0 = P0[i], u1 = P1[i] * GF::root_1(i * 1 * s).invert(), u2 = P2[i] * GF::root_1(i * 2 * s).invert(); // untwist
 			P0[i] = (u0 +      u1 +      u2) * inv3;
 			P1[i] = (u0 + J2 * u1 + J  * u2) * inv3 * invr0;
 			P2[i] = (u0 + J  * u1 + J2 * u2) * inv3 * invr02;
@@ -143,7 +133,7 @@ static void square_fast(GF * const P, const size_t j, const size_t m, const size
 	{
 		// R = R0 * R1 * R2 * R3 * R4, where Ri = x^{m/3} - ri
 		static const GF K = GF::root_nth(5u), K2 = K * K, K3 = K * K2, K4 = K2 * K2;
-		const GF r0 = GF::root_7(m / 5) * GF::root_1(j * m / 5);	// ri = K^i * r0
+		const GF r0 = GF::root_7(m / 5);	// ri = K^i * r0
 		const GF r02 = r0 * r0, r03 = r0 * r02, r04 = r02 * r02;
 
 		// Pi = P mod Ri
@@ -154,21 +144,24 @@ static void square_fast(GF * const P, const size_t j, const size_t m, const size
 		{
 			const GF u0 = P0[i], u1 = r0 * P1[i], u2 = r02 * P2[i], u3 = r03 * P3[i], u4 = r04 * P4[i];
 			P0[i] = u0 +      u1 +      u2 +      u3 +      u4;
-			P1[i] = u0 + K  * u1 + K2 * u2 + K3 * u3 + K4 * u4;
-			P2[i] = u0 + K2 * u1 + K4 * u2 + K  * u3 + K3 * u4;
-			P3[i] = u0 + K3 * u1 + K  * u2 + K4 * u3 + K2 * u4;
-			P4[i] = u0 + K4 * u1 + K3 * u2 + K2 * u3 + K  * u4;
+			// P1, P2, P3 and P3 are twisted
+			P1[i] = (u0 + K  * u1 + K2 * u2 + K3 * u3 + K4 * u4) * GF::root_1(i * 1 * s);
+			P2[i] = (u0 + K2 * u1 + K4 * u2 + K  * u3 + K3 * u4) * GF::root_1(i * 2 * s);
+			P3[i] = (u0 + K3 * u1 + K  * u2 + K4 * u3 + K2 * u4) * GF::root_1(i * 3 * s);
+			P4[i] = (u0 + K4 * u1 + K3 * u2 + K2 * u3 + K  * u4) * GF::root_1(i * 4 * s);
 		}
 
 		// Pi = P^2 mod Ri => divide and conquer
-		square_fast(P0, j + 0 * s, m / 5, s * 5); square_fast(P1, j + 1 * s, m / 5, s * 5); square_fast(P2, j + 2 * s, m / 5, s * 5);
-		square_fast(P3, j + 3 * s, m / 5, s * 5); square_fast(P4, j + 4 * s, m / 5, s * 5);
+		square_fast(P0, m / 5, s * 5); square_fast(P1, m / 5, s * 5); square_fast(P2, m / 5, s * 5);
+		square_fast(P3, m / 5, s * 5); square_fast(P4, m / 5, s * 5);
 
 		// Chinese remainder theorem or simply the inverse of direct butterfly
 		const GF inv5 = GF(5u).invert(), invr0 = r0.invert(), invr02 = invr0 * invr0, invr03 = invr0 * invr02, invr04 = invr02 * invr02;
 		for (size_t i = 0; i < m / 5; ++i)
 		{
-			const GF u0 = P0[i], u1 = P1[i], u2 = P2[i], u3 = P3[i], u4 = P4[i];
+			// untwist
+			const GF u0 = P0[i], u1 = P1[i] * GF::root_1(i * 1 * s).invert(), u2 = P2[i] * GF::root_1(i * 2 * s).invert();
+			const GF u3 = P3[i] * GF::root_1(i * 3 * s).invert(), u4 = P4[i] * GF::root_1(i * 4 * s).invert();
 			P0[i] = (u0 +      u1 +      u2 +      u3 +      u4) * inv5;
 			P1[i] = (u0 + K4 * u1 + K3 * u2 + K2 * u3 + K  * u4) * inv5 * invr0;
 			P2[i] = (u0 + K3 * u1 + K  * u2 + K4 * u3 + K2 * u4) * inv5 * invr02;
@@ -233,7 +226,7 @@ int main()
 	// display(Q, n);
 	// std::cout << std::endl;
 
-	square_fast(P, 0, n, 1);	// s = n / m
+	square_fast(P, n, 1);	// s = n / m
 	// std::cout << " = ";
 	// display(P, n);
 	// std::cout << std::endl;
