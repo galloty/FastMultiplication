@@ -28,8 +28,8 @@ Here *n*&nbsp;= 900, *r*&nbsp;= 7 and *b*&nbsp;= 1000. *p*&nbsp;= 913262401 is c
 ## [*fastMul_rec_twisted.cpp*](fastMul_rec_twisted.cpp)
 
 The recursion is based on the relation *x*<sup>*am*</sup>&nbsp;&minus;&nbsp;*r*<sup>*am*</sup>&nbsp;= Prod<sub>0&le;*k*<*a*</sub>&nbsp;(*x*<sup>*m*</sup>&nbsp;&minus;&nbsp;&alpha;<sup>*k*</sup>*r*<sup>*m*</sup>), where *a* is prime and &alpha; is a primitive root of *x*<sup>*a*</sup>&nbsp;&minus;&nbsp;1</sup>.  
-Let *X*&nbsp;= *x*<sup>*m*</sup> and *R*&nbsp;= *r*<sup>*m*</sup>. If *X*&nbsp;&minus;&nbsp;&alpha;<sup>*k*</sup>*R* is *twisted* into *Y*<sub>*k*</sub>&nbsp;&minus;&nbsp;*R* then at each step all polynomials are identical.  
-We have *P*(*X*)&nbsp;mod&nbsp;*X*&nbsp;&minus;&nbsp;&alpha;<sup>*k*</sup>*R*&nbsp;= *P*(*X*) mod&nbsp;&alpha;<sup>&minus;*k*</sup>*X*&nbsp;&minus;&nbsp;*R*. Let *Y*&nbsp;= &alpha;<sup>&minus;*k*</sup>*X*, we have *y*&nbsp;= &alpha;<sup>&minus;*k*/*m*</sup>*x*.  
+Let *X*&nbsp;= *x*<sup>*m*</sup> and *R*&nbsp;= *r*<sup>*m*</sup>. If *X*&nbsp;&minus;&nbsp;&alpha;<sup>*k*</sup>*R* is *twisted* into *Y*<sub>*k*</sub>&nbsp;&minus;&nbsp;*R* then at each step all polynomial moduli are identical.  
+*P*(*X*)&nbsp;mod&nbsp;*X*&nbsp;&minus;&nbsp;&alpha;<sup>*k*</sup>*R*&nbsp;= *P*(*X*) mod&nbsp;&alpha;<sup>&minus;*k*</sup>*X*&nbsp;&minus;&nbsp;*R*. Let *Y*&nbsp;= &alpha;<sup>&minus;*k*</sup>*X*, we have *y*&nbsp;= &alpha;<sup>&minus;*k*/*m*</sup>*x*.  
 If *P*(*x*)&nbsp;= Sum<sub>0&le;*i*<*m*</sub>&nbsp;c<sub>*i*</sub>&nbsp;*x*<sup>*i*</sup> then *P*(*y*)&nbsp;= Sum<sub>0&le;*i*<*m*</sub>&nbsp;c<sub>*i*</sub>&nbsp;&alpha;<sup>*ik*/*m*</sup>&nbsp;*y*<sup>*i*</sup>. The coefficients of *P*(*y*) are *c*'<sub>*i*</sub>&nbsp;= &alpha;<sup>*ik*/*m*</sup>&nbsp;*c*<sub>*i*</sub>. After the recursion, the coefficients of *P*(*y*) are *untwisted* into *P*(*x*) with *c*<sub>*i*</sub>&nbsp;= &alpha;<sup>&minus;*ik*/*m*</sup>&nbsp;*c*'<sub>*i*</sub>.  
 
 Twisting is the generalization of weighted transforms, where weighting is applied at each step.  
@@ -39,3 +39,13 @@ With the previous version of the fast multiplication, *n*/2 multiplications by 1
 Twisted FFT was defined in Daniel J. Bernstein, [Multidigit multiplication for mathematicians](https://cr.yp.to/papers/m3-20010811-retypeset-20220327.pdf), 2001. It was restricted to *r*&nbsp;= 1 and *n* is a power of two.
 
 ## [*fastMul_rec_FFT.cpp*](fastMul_rec_FFT.cpp)
+
+The twisted fast multiplication is written for *r*&nbsp;= 1. Roots of *r* are equal to one and it can be seen that the twist factors &alpha;<sup>*ik*/*m*</sup> are the twiddle factors of a Fast Fourier Transform.  
+
+The *transform* that splits *P*(*x*) mod&nbsp;*x*<sup>*n*</sup>&nbsp;&minus;&nbsp;1 into *P*(*x*) mod&nbsp;*x*&nbsp;&minus;&nbsp;&omega;<sup>*i*</sup>, where &omega; is a primitive *n*<sup>th</sup> root of unity and 0&le;*i*<*n* is Gentleman-Sande FFT recursion. The inverse transform that merges *P*(*x*)<sup>2</sup> mod&nbsp;*x*&nbsp;&minus;&nbsp;&omega;<sup>*i*</sup> into *P*(*x*)<sup>2</sup> mod&nbsp;*x*<sup>*n*</sup>&nbsp;&minus;&nbsp;1 is Cooley-Tukey FFT recursion. Because Gentleman-Sande and Cooley-Tukey diagrams are symmetric, data ordering of the *output* is irrelevant, even if an iterative FFT algorithm is implemented.
+
+The non-twisted fast multiplication can also be used for the computation of *P*(*x*)<sup>2</sup> mod&nbsp;*x*<sup>*n*</sup>&nbsp;&minus;&nbsp;1. It is a different algorithm.  
+The forward transform was found by Georg Bruun, ["z-Transform DFT filters and FFTs](https://backend.orbit.dtu.dk/ws/files/4658740/Bruun.pdf), 1978, IEEE Transactions on Acoustics, Speech, and Signal Processing, 26 (1): 56-63. Here, the Discrete Fourier Transform is written as a Z-transform filter. A Discrete Fourier transform is evaluated with *n* roots of unity along the z-domain's unit circle. But this restriction does not apply to Z-transforms. If the FFT based multiplication is limited to the polynomial *x*<sup>n</sup>&nbsp;&minus;&nbsp;1 (cyclic convolution), Bruun's method can be applied to any polynomial.  
+
+The two algorithms are implemented. Because *P*(*x*)<sup>2</sup> mod&nbsp;*x*<sup>*n*</sup>&nbsp;&minus;&nbsp;1, both are almost equivalent. But the method based on polynomial factorization can compute *P*(*x*)<sup>2</sup> mod&nbsp;*x*<sup>*n*</sup>&nbsp;&minus;&nbsp;*r* or *P*(*x*)<sup>2</sup> mod&nbsp;&Phi;<sub>*m*</sub>(*x*<sup>*n*</sup>) without an extra "weighted" step.
+
