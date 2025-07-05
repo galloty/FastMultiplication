@@ -61,7 +61,7 @@ public:
 };
 
 // P = P^2 mod x^m - 1
-static void square_fast(GF * const P, const size_t m, const size_t s)
+static void square_fast_twisted(GF * const P, const size_t m)
 {
 	if (m == 1) { P[0] *= P[0]; return; } 	// P is a scalar
 
@@ -74,18 +74,20 @@ static void square_fast(GF * const P, const size_t m, const size_t s)
 
 		for (size_t i = 0; i < m / 2; ++i)
 		{
+			// Gentleman-Sande butterfly
 			const GF u0 = P0[i], u1 = P1[i];
-			P0[i] = u0 + u1;
+			P0[i] =  u0 + u1;
 			P1[i] = (u0 - u1) * rm.pow(i);
 		}
 
 		// P1 = P^2 mod R1, P2 = P^2 mod R2 => divide and conquer
-		square_fast(P0, m / 2, s * 2); square_fast(P1, m / 2, s * 2);
+		square_fast_twisted(P0, m / 2); square_fast_twisted(P1, m / 2);
 
 		// Chinese remainder theorem or simply the inverse of direct butterfly
 		static const GF inv2 = GF(2u).invert();
 		for (size_t i = 0; i < m / 2; ++i)
 		{
+			// Cooley-Tukey butterfly
 			const GF u0 = P0[i], u1 = P1[i] *= invrm.pow(i);
 			P0[i] = (u1 + u0) * inv2;
 			P1[i] = (u0 - u1) * inv2;
@@ -100,8 +102,9 @@ static void square_fast(GF * const P, const size_t m, const size_t s)
 
 		for (size_t i = 0; i < m / 3; ++i)
 		{
+			// Gentleman-Sande radix-3 butterfly
 			const GF u0 = P0[i], u1 = P1[i], u2 = P2[i];
-			P0[i] = u0 +      u1 +      u2;
+			P0[i] =  u0 +      u1 +      u2;
 			// P1 and P2 are twisted such that R1' = R2' = x^{m/3} - 1
 			const GF rmi = rm.pow(i), rmi2 = rmi * rmi;
 			P1[i] = (u0 + J  * u1 + J2 * u2) * rmi;
@@ -109,12 +112,13 @@ static void square_fast(GF * const P, const size_t m, const size_t s)
 		}
 
 		// Pi = P^2 mod Ri => divide and conquer
-		square_fast(P0, m / 3, s * 3); square_fast(P1, m / 3, s * 3); square_fast(P2, m / 3, s * 3);
+		square_fast_twisted(P0, m / 3); square_fast_twisted(P1, m / 3); square_fast_twisted(P2, m / 3);
 
 		// Chinese remainder theorem or simply the inverse of direct butterfly
 		static const GF inv3 = GF(3u).invert();
 		for (size_t i = 0; i < m / 3; ++i)
 		{
+			// Cooley-Tukey radix-3 butterfly
 			const GF invrmi = invrm.pow(i), invrmi2 = invrmi * invrmi;
 			const GF u0 = P0[i], u1 = P1[i] * invrmi, u2 = P2[i] * invrmi2;
 			P0[i] = (u0 +      u1 +      u2) * inv3;
@@ -132,8 +136,9 @@ static void square_fast(GF * const P, const size_t m, const size_t s)
 
 		for (size_t i = 0; i < m / 5; ++i)
 		{
+			// Gentleman-Sande radix-5 butterfly
 			const GF u0 = P0[i], u1 = P1[i], u2 = P2[i], u3 = P3[i], u4 = P4[i];
-			P0[i] = u0 +      u1 +      u2 +      u3 +      u4;
+			P0[i] =  u0 +      u1 +      u2 +      u3 +      u4;
 			// P1, P2, P3 and P3 are twisted
 			const GF rmi = rm.pow(i), rmi2 = rmi * rmi, rmi3 = rmi * rmi2, rmi4 = rmi2 * rmi2;
 			P1[i] = (u0 + K  * u1 + K2 * u2 + K3 * u3 + K4 * u4) * rmi;
@@ -143,13 +148,14 @@ static void square_fast(GF * const P, const size_t m, const size_t s)
 		}
 
 		// Pi = P^2 mod Ri => divide and conquer
-		square_fast(P0, m / 5, s * 5); square_fast(P1, m / 5, s * 5); square_fast(P2, m / 5, s * 5);
-		square_fast(P3, m / 5, s * 5); square_fast(P4, m / 5, s * 5);
+		square_fast_twisted(P0, m / 5); square_fast_twisted(P1, m / 5); square_fast_twisted(P2, m / 5);
+		square_fast_twisted(P3, m / 5); square_fast_twisted(P4, m / 5);
 
 		// Chinese remainder theorem or simply the inverse of direct butterfly
 		static const GF inv5 = GF(5u).invert();
 		for (size_t i = 0; i < m / 5; ++i)
 		{
+			// Cooley-Tukey radix-5 butterfly
 			const GF invrmi = invrm.pow(i), invrmi2 = invrmi * invrmi, invrmi3 = invrmi * invrmi2, invrmi4 = invrmi2 * invrmi2;
 			const GF u0 = P0[i], u1 = P1[i] * invrmi, u2 = P2[i] * invrmi2, u3 = P3[i] * invrmi3, u4 = P4[i] * invrmi4;
 			P0[i] = (u0 +      u1 +      u2 +      u3 +      u4) * inv5;
@@ -157,6 +163,115 @@ static void square_fast(GF * const P, const size_t m, const size_t s)
 			P2[i] = (u0 + K3 * u1 + K  * u2 + K4 * u3 + K2 * u4) * inv5;
 			P3[i] = (u0 + K2 * u1 + K4 * u2 + K  * u3 + K3 * u4) * inv5;
 			P4[i] = (u0 + K  * u1 + K2 * u2 + K3 * u3 + K4 * u4) * inv5;
+		}
+	}
+}
+
+// P = P^2 mod R, where R = x^m - r
+static void square_fast(GF * const P, const size_t j, const size_t m, const size_t s)
+{
+	if (m == 1) { P[0] *= P[0]; return; } 	// P is a scalar
+
+	if (m % 2 == 0)
+	{
+		// R = R0 * R1, where Ri = x^{m/2} - ri
+		const GF r0 = GF::root_nth(2 * s).pow(j), invr0 = r0.invert();	// r1 = -r0;
+
+		// Pi = P mod Ri: if P = a[0] + a[1].x + ... then Pi mod (x^{m/2} - ri) = (a[0] + ri * a[m/2]) + ...
+		GF * const P0 = &P[0 * m / 2]; GF * const P1 = &P[1 * m / 2];
+
+		for (size_t i = 0; i < m / 2; ++i)
+		{
+			// Bruun forward butterfly
+			const GF u0 = P0[i], u1 = r0 * P1[i];
+			P0[i] = u0 + u1;
+			P1[i] = u0 - u1;
+		}
+
+		// P1 = P^2 mod R1, P2 = P^2 mod R2 => divide and conquer
+		square_fast(P0, j + 0 * s, m / 2, s * 2); square_fast(P1, j + 1 * s, m / 2, s * 2);
+
+		// Chinese remainder theorem or simply the inverse of direct butterfly
+		static const GF inv2 = GF(2u).invert();
+		for (size_t i = 0; i < m / 2; ++i)
+		{
+			// Bruun inverse butterfly
+			const GF u0 = P0[i], u1 = P1[i];
+			P0[i] = (u1 + u0) * inv2;
+			P1[i] = (u0 - u1) * inv2 * invr0;
+		}
+	}
+	else if (m % 3 == 0)
+	{
+		// R = R0 * R1 * R2, where Ri = x^{m/3} - ri
+		static const GF J = GF::root_nth(3u), J2 = J * J;
+		const GF r0 = GF::root_nth(3 * s).pow(j), invr0 = r0.invert();	// ri = J^i * r0
+		const GF r02 = r0 * r0, invr02 = invr0 * invr0;
+
+		// Pi = P mod Ri
+		GF * const P0 = &P[0 * m / 3]; GF * const P1 = &P[1 * m / 3]; GF * const P2 = &P[2 * m / 3];
+
+		for (size_t i = 0; i < m / 3; ++i)
+		{
+			// Bruun radix-3 forward butterfly
+			const GF u0 = P0[i], u1 = r0 * P1[i], u2 = r02 * P2[i];
+			P0[i] = u0 +      u1 +      u2;
+			P1[i] = u0 + J  * u1 + J2 * u2;
+			P2[i] = u0 + J2 * u1 + J  * u2;
+		}
+
+		// Pi = P^2 mod Ri => divide and conquer
+		square_fast(P0, j + 0 * s, m / 3, s * 3); square_fast(P1, j + 1 * s, m / 3, s * 3); square_fast(P2, j + 2 * s, m / 3, s * 3);
+
+		// Chinese remainder theorem or simply the inverse of direct butterfly
+		static const GF inv3 = GF(3u).invert();
+		for (size_t i = 0; i < m / 3; ++i)
+		{
+			// Bruun radix-3 inverse butterfly
+			const GF u0 = P0[i], u1 = P1[i], u2 = P2[i];
+			P0[i] = (u0 +      u1 +      u2) * inv3;
+			P1[i] = (u0 + J2 * u1 + J  * u2) * inv3 * invr0;
+			P2[i] = (u0 + J  * u1 + J2 * u2) * inv3 * invr02;
+		}
+	}
+	else if (m % 5 == 0)
+	{
+		// R = R0 * R1 * R2 * R3 * R4, where Ri = x^{m/3} - ri
+		static const GF K = GF::root_nth(5u), K2 = K * K, K3 = K * K2, K4 = K2 * K2;
+		const GF r0 = GF::root_nth(5 * s).pow(j), invr0 = r0.invert();	// ri = K^i * r0
+		const GF r02 = r0 * r0, r03 = r0 * r02, r04 = r02 * r02;
+		const GF invr02 = invr0 * invr0, invr03 = invr0 * invr02, invr04 = invr02 * invr02;
+
+		// Pi = P mod Ri
+		GF * const P0 = &P[0 * m / 5]; GF * const P1 = &P[1 * m / 5];
+		GF * const P2 = &P[2 * m / 5]; GF * const P3 = &P[3 * m / 5];  GF * const P4 = &P[4 * m / 5];
+
+		for (size_t i = 0; i < m / 5; ++i)
+		{
+			// Bruun radix-5 forward butterfly
+			const GF u0 = P0[i], u1 = r0 * P1[i], u2 = r02 * P2[i], u3 = r03 * P3[i], u4 = r04 * P4[i];
+			P0[i] = u0 +      u1 +      u2 +      u3 +      u4;
+			P1[i] = u0 + K  * u1 + K2 * u2 + K3 * u3 + K4 * u4;
+			P2[i] = u0 + K2 * u1 + K4 * u2 + K  * u3 + K3 * u4;
+			P3[i] = u0 + K3 * u1 + K  * u2 + K4 * u3 + K2 * u4;
+			P4[i] = u0 + K4 * u1 + K3 * u2 + K2 * u3 + K  * u4;
+		}
+
+		// Pi = P^2 mod Ri => divide and conquer
+		square_fast(P0, j + 0 * s, m / 5, s * 5); square_fast(P1, j + 1 * s, m / 5, s * 5); square_fast(P2, j + 2 * s, m / 5, s * 5);
+		square_fast(P3, j + 3 * s, m / 5, s * 5); square_fast(P4, j + 4 * s, m / 5, s * 5);
+
+		// Chinese remainder theorem or simply the inverse of direct butterfly
+		static const GF inv5 = GF(5u).invert();
+		for (size_t i = 0; i < m / 5; ++i)
+		{
+			// Bruun radix-5 inverse butterfly
+			const GF u0 = P0[i], u1 = P1[i], u2 = P2[i], u3 = P3[i], u4 = P4[i];
+			P0[i] = (u0 +      u1 +      u2 +      u3 +      u4) * inv5;
+			P1[i] = (u0 + K4 * u1 + K3 * u2 + K2 * u3 + K  * u4) * inv5 * invr0;
+			P2[i] = (u0 + K3 * u1 + K  * u2 + K4 * u3 + K2 * u4) * inv5 * invr02;
+			P3[i] = (u0 + K2 * u1 + K4 * u2 + K  * u3 + K3 * u4) * inv5 * invr03;
+			P4[i] = (u0 + K  * u1 + K2 * u2 + K3 * u3 + K4 * u4) * inv5 * invr04;
 		}
 	}
 }
@@ -204,23 +319,30 @@ int main()
 	std::srand((unsigned int)(std::time(nullptr)));
 
 	const size_t n = 2*2*3*3*5*5;
-	GF P[n]; for (size_t i = 0; i < n; ++i) P[i] = GF(uint32_t(std::rand()) % 1000u);
+	GF P[n], P2[n]; for (size_t i = 0; i < n; ++i) P2[i] = P[i] = GF(uint32_t(std::rand()) % 1000u);
 
 	// std::cout << "Mod(";
 	// display(P, n);
-	// std::cout << ", x^" << n << " - " << r.get() << ")^2" << std::endl;
+	// std::cout << ", x^" << n << " - 1)^2" << std::endl;
 
 	GF Q[n]; square_slow(Q, P, n);
 	// std::cout << " = ";
 	// display(Q, n);
 	// std::cout << std::endl;
 
-	square_fast(P, n, 1);	// s = n / m
+	square_fast_twisted(P, n);
 	// std::cout << " = ";
 	// display(P, n);
 	// std::cout << std::endl;
 
 	check(P, Q, n);
+
+	square_fast(P2, 0, n, 1);	// s = n / m
+	// std::cout << " = ";
+	// display(P2, n);
+	// std::cout << std::endl;
+
+	check(P2, Q, n);
 
 	return EXIT_SUCCESS;
 }
