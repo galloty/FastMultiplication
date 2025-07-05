@@ -11,11 +11,11 @@ Fast modular multiplication of polynomials is a divide-and-conquer algorithm, wh
 
 ## [*fastMul_rec.cpp*](fastMul_rec.cpp)
 
-The recursion is applied to compute *P*(*x*)<sup>2</sup> mod&nbsp;*x*<sup>8</sup>&nbsp;&minus;&nbsp;7, where *P* is a polynomial of degree 8&minus;1. The field is the complex numbers. The Chinese remainder theorem for polynomials is evaluated: at each step, *P*(*x*)<sup>2</sup> mod&nbsp;*x*<sup>2*m*</sup>&nbsp;&minus;&nbsp;*r*<sup>2*m*</sup> is calculated from *P*(*x*)<sup>2</sup> mod&nbsp;*x*<sup>*m*</sup>&nbsp;&minus;&nbsp;*r*<sup>*m*</sup> and *P*(*x*)<sup>2</sup> mod&nbsp;*x*<sup>*m*</sup>&nbsp;+&nbsp;*r*<sup>*m*</sup>. The last step is Lagrange interpolation and we have *P*(*x*) mod&nbsp;*x*&nbsp;&minus;&nbsp;*r* = *P*(*r*).
+The recursion is applied to compute *P*(*x*)<sup>2</sup> mod&nbsp;*x*<sup>8</sup>&nbsp;&minus;&nbsp;7, where *P* is a polynomial of degree 8&minus;1. The field is the complex numbers. The Chinese remainder theorem for polynomials is evaluated: at each step, *P*(*x*)<sup>2</sup> mod&nbsp;*x*<sup>2*m*</sup>&nbsp;&minus;&nbsp;*r*<sup>2*m*</sup> is calculated from *P*(*x*)<sup>2</sup> mod&nbsp;*x*<sup>*m*</sup>&nbsp;&minus;&nbsp;*r*<sup>*m*</sup> and *P*(*x*)<sup>2</sup> mod&nbsp;*x*<sup>*m*</sup>&nbsp;+&nbsp;*r*<sup>*m*</sup>. The last step is Lagrange interpolation and we have *P*(*x*) mod&nbsp;*x*&nbsp;&minus;&nbsp;*r*&nbsp;= *P*(*r*).
 
 ## [*fastMul_rec_235.cpp*](fastMul_rec_235.cpp)
 
-The algorithm is extended to *P*(*x*)<sup>2</sup> mod&nbsp;*x*<sup>2<sup>2</sup>&nbsp;&middot;&nbsp;3<sup>2</sup>&nbsp;&middot;&nbsp;5<sup>2</sup></sup>&nbsp;&minus;&nbsp;7. We have *x*<sup>3*m*</sup>&nbsp;&minus;&nbsp;*r*<sup>3*m*</sup> = (x<sup>*m*</sup>&nbsp;&minus;&nbsp;*r*<sup>*m*</sup>)&nbsp;&middot;&nbsp;(x<sup>*m*</sup>&nbsp;&minus;&nbsp;*jr<sup>*m*</sup>*)&nbsp;&middot;&nbsp;(x<sup>*m*</sup>&nbsp;&minus;&nbsp;*j*<sup>2</sup>*r*<sup>*m*</sup>)&nbsp;&middot;&nbsp;, where *j* is a primitive root of *x*<sup>3</sup>&nbsp;&minus;&nbsp;1</sup>. The equivalent relation is applied to *x*<sup>5*m*</sup>&nbsp;&minus;&nbsp;*r*<sup>5*m*</sup>.
+The algorithm is extended to *P*(*x*)<sup>2</sup> mod&nbsp;*x*<sup>2<sup>2</sup>&nbsp;&middot;&nbsp;3<sup>2</sup>&nbsp;&middot;&nbsp;5<sup>2</sup></sup>&nbsp;&minus;&nbsp;7. We have *x*<sup>3*m*</sup>&nbsp;&minus;&nbsp;*r*<sup>3*m*</sup>&nbsp;= (x<sup>*m*</sup>&nbsp;&minus;&nbsp;*r*<sup>*m*</sup>)&nbsp;&middot;&nbsp;(x<sup>*m*</sup>&nbsp;&minus;&nbsp;*jr<sup>*m*</sup>*)&nbsp;&middot;&nbsp;(x<sup>*m*</sup>&nbsp;&minus;&nbsp;*j*<sup>2</sup>*r*<sup>*m*</sup>)&nbsp;&middot;&nbsp;, where *j* is a primitive root of *x*<sup>3</sup>&nbsp;&minus;&nbsp;1</sup>. The equivalent relation is applied to *x*<sup>5*m*</sup>&nbsp;&minus;&nbsp;*r*<sup>5*m*</sup>.
 
 ## [*fastMul_rec_GF.cpp*](fastMul_rec_GF.cpp)
 
@@ -26,4 +26,13 @@ Roots are calculated over a prime finite field of order *p*. There are two condi
 Here *n*&nbsp;= 900, *r*&nbsp;= 7 and *b*&nbsp;= 1000. *p*&nbsp;= 913262401 is chosen: we have 243771734<sup>*n*</sup>&nbsp;= 7 (mod&nbsp;*p*) and *p*&nbsp;> *n*&nbsp;&middot;&nbsp;(*b*&nbsp;&minus;&nbsp;1)<sup>2</sup>&nbsp;= 898200900. Rather than evaluating the square, cube or 5<sup>th</sup> root of an element, the *n*<sup>th</sup> root of unity and the *n*<sup>th</sup> root of 7 are computed and roots needed for the algorithm are of the form 1<sup>*u*/*n*</sup>&nbsp;&middot;&nbsp;7<sup>*v*/*n*</sup>.
 
 ## [*fastMul_rec_twisted.cpp*](fastMul_rec_twisted.cpp)
+
+The recursion is based on the relation *x*<sup>*am*</sup>&nbsp;&minus;&nbsp;*r*<sup>*am*</sup>&nbsp;= Prod<sub>0&le;*k*<*a*</sub>&nbsp;(*x*<sup>*m*</sup>&nbsp;&minus;&nbsp;&alpha;<sup>*k*</sup>*r*<sup>*m*</sup>), where *a* is prime and &alpha; is a primitive root of *x*<sup>*a*</sup>&nbsp;&minus;&nbsp;1</sup>.  
+Let *X*&nbsp;= *x*<sup>*m*</sup> and *R*&nbsp;= *r*<sup>*m*</sup>. If *X*&nbsp;&minus;&nbsp;&alpha;<sup>*k*</sup>*R* is *twisted* into *Y*<sub>*k*</sub>&nbsp;&minus;&nbsp;*R* then at each step all polynomials are identical.  
+We have *P*(*X*)&nbsp;mod&nbsp;*X*&nbsp;&minus;&nbsp;&alpha;<sup>*k*</sup>*R*&nbsp;= *P*(*X*) mod&nbsp;&alpha;<sup>&minus;*k*</sup>*X*&nbsp;&minus;&nbsp;*R*. Let *Y*&nbsp;= &alpha;<sup>&minus;*k*</sup>*X*, we have *y*&nbsp;= &alpha;<sup>&minus;*k*/*m*</sup>*x*.  
+If *P*(*x*)&nbsp;= Sum<sub>0&le;*i*<*m*</sub>&nbsp;c<sub>*i*</sub>&nbsp;*x*<sup>*i*</sup> then *P*(*y*)&nbsp;= Sum<sub>0&le;*i*<*m*</sub>&nbsp;c<sub>*i*</sub>&nbsp;&alpha;<sup>*ik*/*m*</sup>&nbsp;*y*<sup>*i*</sup>. The coefficients of *P*(*y*) are *c*'<sub>*i*</sub>&nbsp;= &alpha;<sup>*ik*/*m*</sup>&nbsp;*c*<sub>*i*</sub>. After the recursion, the coefficients of *P*(*y*) are *untwisted* into *P*(*x*) with *c*<sub>*i*</sub>&nbsp;= &alpha;<sup>&minus;*ik*/*m*</sup>&nbsp;*c*'<sub>*i*</sub>.  
+
+Twisting is the generalization of weighted transforms, where weighting is applied at each step.  
+
+With the previous version of the fast multiplication, we have *n*/2 multiplications by 1<sup>*u*/*n*</sup>&nbsp;&middot;&nbsp;*r*<sup>*v*/*n*</sup> at each step. With the twisted form, we have *n*/2 multiplications by *r*<sup>*v*/*n*</sup> and *n*/2 multiplications by 1<sup>*u*'/*n*</sup>. The twisted transform is as efficient as the non-twisted form only if *r*&nbsp;= 1.
 
