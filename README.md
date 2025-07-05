@@ -34,5 +34,8 @@ If *P*(*x*)&nbsp;= Sum<sub>0&le;*i*<*m*</sub>&nbsp;c<sub>*i*</sub>&nbsp;*x*<sup>
 
 Twisting is the generalization of weighted transforms, where weighting is applied at each step.  
 
-With the previous version of the fast multiplication, we have *n*/2 multiplications by 1<sup>*u*/*n*</sup>&nbsp;&middot;&nbsp;*r*<sup>*v*/*n*</sup> at each step. With the twisted form, we have *n*/2 multiplications by *r*<sup>*v*/*n*</sup> and *n*/2 multiplications by 1<sup>*u*'/*n*</sup>. The twisted transform is as efficient as the non-twisted form only if *r*&nbsp;= 1.
+With the previous version of the fast multiplication, *n*/2 multiplications by 1<sup>*u*/*n*</sup>&nbsp;&middot;&nbsp;*r*<sup>*v*/*n*</sup> are computed at each step. With the twisted form, *n*/2 multiplications by *r*<sup>*v*/*n*</sup> and *n*/2 multiplications by 1<sup>*u*'/*n*</sup> are needed. The twisted transform is as efficient as the non-twisted form only if *r*&nbsp;= 1.
 
+Twisted FFT was defined in Daniel J. Bernstein, [Multidigit multiplication for mathematicians](https://cr.yp.to/papers/m3-20010811-retypeset-20220327.pdf), 2001. It was restricted to *r*&nbsp;= 1 and *n* is a power of two.
+
+## [*fastMul_rec_FFT.cpp*](fastMul_rec_FFT.cpp)
