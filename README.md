@@ -52,4 +52,6 @@ The two algorithms are implemented: because *P*(*x*)<sup>2</sup> mod&nbsp;*x*<su
 
 ## [*fastMul_GF.cpp*](fastMul_GF.cpp)
 
-Fast multiplication based on a recursive polynomial factorization is an in-place algorithm. The roots needed at each step can be precomputed. An iterative (non-recursive) version of [fastMul_rec_GF.cpp](fastMul_rec_GF.cpp) is implemented here. Note that roots are stored in 2-3-5-reversed order: it is a generalization of bit-reversal permutation based on decomposing *n* into its prime factors. Rather than a division by 2, 3 or 5 at each step of the reverse process, a single division by *n* is computed at the end of the algorithm.
+Fast multiplication based on a recursive polynomial factorization is an in-place algorithm. The roots needed at each step can be precomputed. An iterative (non-recursive) version of [fastMul_rec_GF.cpp](fastMul_rec_GF.cpp) is implemented here. Note that roots are stored in 2-3-5-reversed order: it is a generalization of bit-reversal permutation based on decomposing *n* into its prime factors. Rather than a division by 2, 3 or 5 at each step of the reverse process, a single division by *n* is computed at the end of the algorithm.  
+
+The number of operations is equal to a FFT based multiplication, where the polynomial of the convolution is *x*<sup>900</sup>&nbsp;&minus;&nbsp;1. But here the polynomial is *x*<sup>900</sup>&nbsp;&minus;&nbsp;7.
