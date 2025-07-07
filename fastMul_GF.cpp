@@ -10,7 +10,7 @@ Please give feedback to the authors if improvement is realized. It is distribute
 #include <cstdlib>
 #include <ctime>
 
-// a prime finite field such that p = k * n + 1 and a nth root of r exists
+// A prime finite field such that p = k * n + 1 and a nth root of r exists
 class GF
 {
 private:
@@ -71,12 +71,14 @@ private:
 	const size_t _n;
 	GF * const _root;
 	GF * const _invroot;
-	const GF J = GF::root_nth(3u), J2 = J * J;
-	const GF K = GF::root_nth(5u), K2 = K * K, K3 = K * K2, K4 = K2 * K2;
+	const GF J = GF::root_nth(3u), J2 = J * J;	// Radix-3
+	const GF K = GF::root_nth(5u), K2 = K * K, K3 = K * K2, K4 = K2 * K2;	// Radix-5
 
+	// Generalization of bit-reversal permutation
 	static constexpr size_t reversal(const size_t i, const size_t n)
 	{
 		size_t r = 0, k = n, j = i;
+		// The order should be the inverse of the order of the square function
 		for (; k % 2 == 0; k /= 2, j /= 2) r = 2 * r + j % 2;
 		for (; k % 3 == 0; k /= 3, j /= 3) r = 3 * r + j % 3;
 		for (; k % 5 == 0; k /= 5, j /= 5) r = 5 * r + j % 5;
@@ -97,6 +99,7 @@ private:
 public:
 	conv_fast(const size_t n) : _n(n), _root(new GF[n]), _invroot(new GF[n])
 	{
+		// Init precomputed tables
 		size_t m = _n, s = 1;
 		while (m != 1)
 		{
@@ -110,6 +113,7 @@ public:
 	{
 		const size_t n = _n;
 		const GF * const root = _root;
+		const GF * const invroot = _invroot;
 
 		size_t m = n, s = 1;
 		while (m != 1)
@@ -179,8 +183,6 @@ public:
 
 		for (size_t k = 0; k < n; ++k) P[k] *= P[k];
 
-		const GF * const invroot = _invroot;
-		// size_t m = 1, s = _n;
 		while (s != 1)
 		{
 			if (s % 2 == 0)

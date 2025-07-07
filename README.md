@@ -49,3 +49,6 @@ The forward transform was found by Georg Bruun, ["z-Transform DFT filters and FF
 
 The two algorithms are implemented: because *P*(*x*)<sup>2</sup> mod&nbsp;*x*<sup>*n*</sup>&nbsp;&minus;&nbsp;1 is calculated, both are almost equivalent. But the method based on polynomial factorization can compute *P*(*x*)<sup>2</sup> mod&nbsp;*x*<sup>*n*</sup>&nbsp;&minus;&nbsp;*r* or *P*(*x*)<sup>2</sup> mod&nbsp;&Phi;<sub>*m*</sub>(*x*<sup>*n*</sup>), where &Phi;<sub>*m*</sub> is the *m*<sup>th</sup> cyclotomic polynomial, without an extra "weighted" step.
 
+## [*fastMul_GF.cpp*](fastMul_GF.cpp)
+
+Fast multiplication based on a recursive polynomial factorization is an in-place algorithm. The roots needed at each step can be precomputed. An iterative (non-recursive) version of [fastMul_rec_GF.cpp](fastMul_rec_GF.cpp) is implemented here. Note that roots are stored in 2-3-5-reversed order: it is a generalization of bit-reversal permutation based on decomposing *n* into its prime factors. Rather than a division by 2, 3 or 5 at each step of the reverse process, a single division by *n* is computed at the end of the algorithm.
