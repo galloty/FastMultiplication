@@ -29,9 +29,9 @@ Here *n*&nbsp;= 900, *r*&nbsp;= 7 and *b*&nbsp;= 1000. *p*&nbsp;= 913262401 is c
 ## [*fastMul_rec_twisted.cpp*](fastMul_rec_twisted.cpp)
 
 The recursion is based on the relation *x*<sup>*am*</sup>&nbsp;&minus;&nbsp;*r*<sup>*am*</sup>&nbsp;= Prod<sub>0&le;*k*<*a*</sub>&nbsp;(*x*<sup>*m*</sup>&nbsp;&minus;&nbsp;&alpha;<sup>*k*</sup>*r*<sup>*m*</sup>), where *a* is prime and &alpha; is a primitive root of *x*<sup>*a*</sup>&nbsp;&minus;&nbsp;1</sup>.  
-Let *X*&nbsp;= *x*<sup>*m*</sup> and *R*&nbsp;= *r*<sup>*m*</sup>. If *X*&nbsp;&minus;&nbsp;&alpha;<sup>*k*</sup>*R* is *twisted* into *Y*<sub>*k*</sub>&nbsp;&minus;&nbsp;*R* then at each step all polynomial moduli are identical.  
-*P*(*X*)&nbsp;mod&nbsp;*X*&nbsp;&minus;&nbsp;&alpha;<sup>*k*</sup>*R*&nbsp;= *P*(*X*) mod&nbsp;&alpha;<sup>&minus;*k*</sup>*X*&nbsp;&minus;&nbsp;*R*. Let *Y*&nbsp;= &alpha;<sup>&minus;*k*</sup>*X*, we have *y*&nbsp;= &alpha;<sup>&minus;*k*/*m*</sup>*x*.  
-If *P*(*x*)&nbsp;= Sum<sub>0&le;*i*<*m*</sub>&nbsp;c<sub>*i*</sub>&nbsp;*x*<sup>*i*</sup> then *P*(*y*)&nbsp;= Sum<sub>0&le;*i*<*m*</sub>&nbsp;c<sub>*i*</sub>&nbsp;&alpha;<sup>*ik*/*m*</sup>&nbsp;*y*<sup>*i*</sup>. The coefficients of *P*(*y*) are *c*'<sub>*i*</sub>&nbsp;= &alpha;<sup>*ik*/*m*</sup>&nbsp;*c*<sub>*i*</sub>. After the recursion, the coefficients of *P*(*y*) are *untwisted* into *P*(*x*) with *c*<sub>*i*</sub>&nbsp;= &alpha;<sup>&minus;*ik*/*m*</sup>&nbsp;*c*'<sub>*i*</sub>.  
+Let *X*&nbsp;= *x*<sup>*m*</sup> and *R*&nbsp;= *r*<sup>*m*</sup>. If *X*&nbsp;&minus;&nbsp;&alpha;<sup>*k*</sup>*R* is *twisted* into *Y*<sub>*k*</sub>&nbsp;&minus;&nbsp;*R* for each *k* then at each step all polynomial moduli are identical.  
+The transformation is  a linear map. *P*(*X*)&nbsp;mod&nbsp;*X*&nbsp;&minus;&nbsp;&alpha;<sup>*k*</sup>*R*&nbsp;= *P*(*X*) mod&nbsp;&alpha;<sup>&minus;*k*</sup>*X*&nbsp;&minus;&nbsp;*R*. Let *Y*<sub>*k*</sub>&nbsp;= &alpha;<sup>&minus;*k*</sup>*X*, we have *y*<sub>*k*</sub>&nbsp;= &alpha;<sup>&minus;*k*/*m*</sup>*x*.  
+If *P*(*x*)&nbsp;= Sum<sub>0&le;*i*<*m*</sub>&nbsp;c<sub>*i*</sub>&nbsp;*x*<sup>*i*</sup> then *P*(*y*<sub>*k*</sub>)&nbsp;= Sum<sub>0&le;*i*<*m*</sub>&nbsp;c<sub>*i*</sub>&nbsp;&alpha;<sup>*ik*/*m*</sup>&nbsp;*y*<sub>*k*</sub><sup>*i*</sup>. The coefficients of *P*(*y*<sub>*k*</sub>) are *c*'<sub>*i*</sub>&nbsp;= &alpha;<sup>*ik*/*m*</sup>&nbsp;*c*<sub>*i*</sub>. After the recursion, the coefficients of *P*(*y*<sub>*k*</sub>) are *untwisted* into *P*(*x*) with *c*<sub>*i*</sub>&nbsp;= &alpha;<sup>&minus;*ik*/*m*</sup>&nbsp;*c*'<sub>*i*</sub>.  
 
 Twisting is the generalization of weighted transforms, where weighting is applied at each step.  
 
@@ -55,3 +55,14 @@ The two algorithms are implemented: because *P*(*x*)<sup>2</sup> mod&nbsp;*x*<su
 Fast multiplication based on a recursive polynomial factorization is an in-place algorithm. The roots needed at each step can be precomputed. An iterative (non-recursive) version of [fastMul_rec_GF.cpp](fastMul_rec_GF.cpp) is implemented here. Note that roots are stored in 2-3-5-reversed order: it is a generalization of bit-reversal permutation based on decomposing *n* into its prime factors. Rather than a division by 2, 3 or 5 at each step of the reverse process, a single division by *n* is computed at the end of the algorithm.  
 
 The number of operations is equal to a FFT based multiplication, where the polynomial of the convolution is *x*<sup>900</sup>&nbsp;&minus;&nbsp;1. But here the polynomial is *x*<sup>900</sup>&nbsp;&minus;&nbsp;7.
+
+## [*fastMul_GFp2.cpp*](fastMul_GFp2.cpp)
+
+A full implementation of the fast multiplication of numbers of the form *b*<sup>2<sup>*n*</sup></sup>&nbsp;+&nbsp;1. The probable primes of this form are generated.  
+
+The recursion is *b*<sup>2<sup>*n*</sup></sup>&nbsp;&minus;&nbsp;(&minus;1)&nbsp;= (*b*<sup>2<sup>*n*&minus;1</sup></sup>&nbsp;&minus;&nbsp;*i*)&nbsp;(*b*<sup>2<sup>*n*&minus;1</sup></sup>&nbsp;&minus;&nbsp;(&minus;*i*))&nbsp;=&nbsp;..., where *i* is a root of &minus;1.  
+The finite field is of order *p*<sup>2</sup>, where *p* is the Mersenne prime 2<sup>61</sup>&nbsp;&minus;&nbsp;1. With the irreducible polynomial *X*<sup>2</sup>&nbsp;+&nbsp;1, we have &alpha;<sup>2</sup>&nbsp;= &minus;1: operations are similar to the complex numbers. Because *i* and its negative are the first roots of the recursion, we can use a half length transform over GF(*p*<sup>2</sup>).  
+
+Three multiplications are needed for a radix-4 butterfly. If the field is GF(*p*), 2&times;4 multiplications are necessary for a radix-4 step with 8 values. Four multiplications in GF(*p*) are required to compute a multiplication in GF(*p*<sup>2</sup>). The balance is GF(*p*): 8 multiplications, GF(*p*<sup>2</sup>): 12 multiplications.  
+But with a prime finite field, *p* must be of the form *k*&nbsp;2<sup>*n*+1</sup>&nbsp;+&nbsp;1 such that a (*n*+1)<sup>th</sup> root of unity exists. With GF(*p*<sup>2</sup>), if *p*&nbsp;= 2<sup>*q*</sup>&nbsp;&minus;&nbsp;1 the order of the multiplicative group is *p*<sup>2</sup>&nbsp;&minus;&nbsp;1&nbsp;= 2<sup>*q*+1</sup>&nbsp;*p*: there is a primitive root of unity of order 2<sup>*q*+1</sup>.  
+Using 64-bit integers, on the one hand two multiplications modulo 2<sup>64</sup>&nbsp;&minus;&nbsp;2<sup>32</sup>&nbsp;+&nbsp;1 on the other hand three multiplications modulo 2<sup>61</sup>&nbsp;&minus;&nbsp;1. The fastest implementation depends on the architecture of the processor.
