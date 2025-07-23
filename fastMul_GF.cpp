@@ -71,8 +71,8 @@ private:
 	const size_t _n;
 	GF * const _root;
 	GF * const _invroot;
-	const GF J = GF::root_nth(3u), J2 = J * J;	// Radix-3
-	const GF K = GF::root_nth(5u), K2 = K * K, K3 = K * K2, K4 = K2 * K2;	// Radix-5
+	const GF J = GF::root_nth(3u);	// Radix-3
+	const GF K = GF::root_nth(5u), K2 = K * K;	// Radix-5
 
 	// Generalization of bit-reversal permutation
 	static constexpr size_t reversal(const size_t i, const size_t n)
@@ -130,11 +130,14 @@ public:
 					{
 						const size_t k = 5 * m * j + i;
 						const GF u0 = P[k + 0 * m], u1 = r * P[k + 1 * m], u2 = r2 * P[k + 2 * m], u3 = r03 * P[k + 3 * m], u4 = r4 * P[k + 4 * m];
-						P[k + 0 * m] = u0 +      u1 +      u2 +      u3 +      u4;
-						P[k + 1 * m] = u0 + K  * u1 + K2 * u2 + K3 * u3 + K4 * u4;
-						P[k + 2 * m] = u0 + K2 * u1 + K4 * u2 + K  * u3 + K3 * u4;
-						P[k + 3 * m] = u0 + K3 * u1 + K  * u2 + K4 * u3 + K2 * u4;
-						P[k + 4 * m] = u0 + K4 * u1 + K3 * u2 + K2 * u3 + K  * u4;
+						// 20 add, 16 mul => 26 add, 10 mul
+						const GF t14 = K * (u1 - u4), t23 = K * (u2 - u3);	// K^4 = -(1 + K + K^2 + K^3)
+						const GF t12 = K2 * (u1 - u2), t13 = K2 * (u1 - u3), t24 = K2 * (u2 - u4), t34 = K2 * (u3 - u4);
+						P[k + 0 * m] = u0 + u1 + u2 + u3 + u4;
+						P[k + 1 * m] = u0 - u4 +     t14 + t24 + K * t34;
+						P[k + 2 * m] = u0 - u2 +     t12 - t23 - K * t24;
+						P[k + 3 * m] = u0 - u3 + K * t13 + t23 -     t34;
+						P[k + 4 * m] = u0 - u1 - K * t12 - t13 -     t14;
 					}
 				}
 
@@ -152,9 +155,10 @@ public:
 					{
 						const size_t k = 3 * m * j + i;
 						const GF u0 = P[k + 0 * m], u1 = r * P[k + 1 * m], u2 = r2 * P[k + 2 * m];
-						P[k + 0 * m] = u0 +      u1 +      u2;
-						P[k + 1 * m] = u0 + J  * u1 + J2 * u2;
-						P[k + 2 * m] = u0 + J2 * u1 + J  * u2;
+						const GF t = J * (u1 - u2);	// J^2 = -(1 + J)
+						P[k + 0 * m] = u0 + u1 + u2;
+						P[k + 1 * m] = u0 - u2 + t;
+						P[k + 2 * m] = u0 - u1 - t;
 					}
 				}
 
@@ -216,9 +220,10 @@ public:
 					{
 						const size_t k = 3 * m * j + i;
 						const GF u0 = P[k + 0 * m], u1 = P[k + 1 * m], u2 = P[k + 2 * m];
-						P[k + 0 * m] =  u0 +      u1 +      u2;
-						P[k + 1 * m] = (u0 + J2 * u1 + J  * u2) * invr;
-						P[k + 2 * m] = (u0 + J  * u1 + J2 * u2) * invr2;
+						const GF t = J * (u1 - u2);	// J^2 = -(1 + J)
+						P[k + 0 * m] =  u0 + u1 + u2;
+						P[k + 1 * m] = (u0 - u1 - t) * invr;
+						P[k + 2 * m] = (u0 - u2 + t) * invr2;
 					}
 				}
 
@@ -236,11 +241,14 @@ public:
 					{
 						const size_t k = 5 * m * j + i;
 						const GF u0 = P[k + 0 * m], u1 = P[k + 1 * m], u2 = P[k + 2 * m], u3 = P[k + 3 * m], u4 = P[k + 4 * m];
-						P[k + 0 * m] =  u0 +      u1 +      u2 +      u3 +      u4;
-						P[k + 1 * m] = (u0 + K4 * u1 + K3 * u2 + K2 * u3 + K  * u4) * invr;
-						P[k + 2 * m] = (u0 + K3 * u1 + K  * u2 + K4 * u3 + K2 * u4) * invr2;
-						P[k + 3 * m] = (u0 + K2 * u1 + K4 * u2 + K  * u3 + K3 * u4) * invr3;
-						P[k + 4 * m] = (u0 + K  * u1 + K2 * u2 + K3 * u3 + K4 * u4) * invr4;
+						// 20 add, 16 mul => 26 add, 10 mul
+						const GF t14 = K * (u1 - u4), t23 = K * (u2 - u3);	// K^4 = -(1 + K + K^2 + K^3)
+						const GF t12 = K2 * (u1 - u2), t13 = K2 * (u1 - u3), t24 = K2 * (u2 - u4), t34 = K2 * (u3 - u4);
+						P[k + 0 * m] =  u0 + u1 + u2 + u3 + u4;
+						P[k + 1 * m] = (u0 - u1 - K * t12 - t13 -     t14) * invr;
+						P[k + 2 * m] = (u0 - u3 + K * t13 + t23 -     t34) * invr2;
+						P[k + 3 * m] = (u0 - u2 +     t12 - t23 - K * t24) * invr3;
+						P[k + 4 * m] = (u0 - u4 +     t14 + t24 + K * t34) * invr4;
 					}
 				}
 
