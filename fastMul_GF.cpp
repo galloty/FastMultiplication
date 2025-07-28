@@ -14,7 +14,7 @@ Please give feedback to the authors if improvement is realized. It is distribute
 class GF
 {
 private:
-	uint32_t n;
+	uint32_t _n;
 
 public:
 	// Let p be the order of the finite field. We must have:
@@ -30,17 +30,19 @@ public:
 
 public:
 	GF() {}
-	GF(const uint32_t l) : n(l) {}
+	GF(const uint32_t n) : _n(n) {}
 
-	uint32_t get() const { return n; }
+	uint32_t get() const { return _n; }
 
-	GF & operator+=(const GF & rhs) { const uint32_t c = (n >= _p - rhs.n) ? _p : 0; n += rhs.n; n -= c; return *this; }
-	GF & operator-=(const GF & rhs) { const uint32_t c = (n < rhs.n) ? _p : 0; n -= rhs.n; n += c; return *this; }
-	GF & operator*=(const GF & rhs) { *this = uint32_t((n * uint64_t(rhs.n)) % _p); return *this; }
+	GF & operator+=(const GF & rhs) { const uint32_t c = (_n >= _p - rhs._n) ? _p : 0; _n += rhs._n; _n -= c; return *this; }
+	GF & operator-=(const GF & rhs) { const uint32_t c = (_n < rhs._n) ? _p : 0; _n -= rhs._n; _n += c; return *this; }
+	GF & operator*=(const GF & rhs) { *this = uint32_t((_n * uint64_t(rhs._n)) % _p); return *this; }
 
 	GF operator+(const GF & rhs) const { GF r = *this; r += rhs; return r; }
 	GF operator-(const GF & rhs) const { GF r = *this; r -= rhs; return r; }
 	GF operator*(const GF & rhs) const { GF r = *this; r *= rhs; return r; }
+
+	GF half() const { return GF((_n % 2 == 0) ? _n / 2 : ((_n - 1) / 2 + (_p + 1) / 2)); }
 
 	GF pow(const uint32_t e) const
 	{
@@ -72,7 +74,8 @@ private:
 	GF * const _root;
 	GF * const _invroot;
 	const GF J = GF::root_nth(3u);	// Radix-3
-	const GF K = GF::root_nth(5u), K2 = K * K;	// Radix-5
+	const GF K = GF::root_nth(5u), K1 = K + GF(1u), K2 = K * K;	// Radix-5
+	const GF F2 = (K1 * K2).half(), F3 = K * K1, F4 = K * (K2 + GF(1u)), F5 = (F3 + F4).half();
 
 	// Generalization of bit-reversal permutation
 	static constexpr size_t reversal(const size_t i, const size_t n)
@@ -109,6 +112,12 @@ public:
 		}
 	}
 
+	~conv_fast()
+	{
+		delete[] _root;
+		delete[] _invroot;
+	}
+
 	void square(GF * const P) const
 	{
 		const size_t n = _n;
@@ -124,20 +133,26 @@ public:
 
 				for (size_t j = 0; j < s; ++j)
 				{
-					const GF r = root[s + j], r2 = r * r, r03 = r * r2, r4 = r2 * r2;
+					const GF r = root[s + j], r2 = r * r, r3 = r * r2, r4 = r2 * r2;
 
 					for (size_t i = 0; i < m; ++i)
 					{
 						const size_t k = 5 * m * j + i;
-						const GF u0 = P[k + 0 * m], u1 = r * P[k + 1 * m], u2 = r2 * P[k + 2 * m], u3 = r03 * P[k + 3 * m], u4 = r4 * P[k + 4 * m];
-						// 20 add, 16 mul => 26 add, 10 mul
-						const GF t14 = K * (u1 - u4), t23 = K * (u2 - u3);	// K^4 = -(1 + K + K^2 + K^3)
-						const GF t12 = K2 * (u1 - u2), t13 = K2 * (u1 - u3), t24 = K2 * (u2 - u4), t34 = K2 * (u3 - u4);
-						P[k + 0 * m] = u0 + u1 + u2 + u3 + u4;
-						P[k + 1 * m] = u0 - u4 +     t14 + t24 + K * t34;
-						P[k + 2 * m] = u0 - u2 +     t12 - t23 - K * t24;
-						P[k + 3 * m] = u0 - u3 + K * t13 + t23 -     t34;
-						P[k + 4 * m] = u0 - u1 - K * t12 - t13 -     t14;
+						const GF u0 = P[k + 0 * m], u1 = r * P[k + 1 * m], u2 = r2 * P[k + 2 * m], u3 = r3 * P[k + 3 * m], u4 = r4 * P[k + 4 * m];
+
+						// const GF K3 = K * K2, K4 = K2 * K2;
+						// P[k + 0 * m] = u0 +      u1 +      u2 +      u3 +      u4;
+						// P[k + 1 * m] = u0 + K  * u1 + K2 * u2 + K3 * u3 + K4 * u4;
+						// P[k + 2 * m] = u0 + K2 * u1 + K4 * u2 + K  * u3 + K3 * u4;
+						// P[k + 3 * m] = u0 + K3 * u1 + K  * u2 + K4 * u3 + K2 * u4;
+						// P[k + 4 * m] = u0 + K4 * u1 + K3 * u2 + K2 * u3 + K  * u4;
+
+						const GF v1 = u1 + u4, v4 = u1 - u4, v2 = u2 + u3, v3 = u2 - u3;
+						const GF z0 = v1 + v2;
+						const GF x1 = u0, x2 = (v1 - v2) * F2, x3 = v3 * F3, x4 = v4 * F4, x5 = (v4 - v3) * F5;
+						const GF y1 = x1 + x2, y2 = x1 - x2, y3 = x3 + x5, y4 = x4 - x5;
+						const GF z1 = y1 + y4, z4 = y1 - y4, z2 = y2 + y3, z3 = y2 - y3;
+						P[k + 0 * m] = z0 + u0; P[k + 1 * m] = z2 - u4; P[k + 2 * m] = z4 - u2; P[k + 3 * m] = z1 - u3; P[k + 4 * m] = z3 - u1;
 					}
 				}
 
@@ -240,15 +255,25 @@ public:
 					for (size_t i = 0; i < m; ++i)
 					{
 						const size_t k = 5 * m * j + i;
-						const GF u0 = P[k + 0 * m], u1 = P[k + 1 * m], u2 = P[k + 2 * m], u3 = P[k + 3 * m], u4 = P[k + 4 * m];
-						// 20 add, 16 mul => 26 add, 10 mul
-						const GF t14 = K * (u1 - u4), t23 = K * (u2 - u3);	// K^4 = -(1 + K + K^2 + K^3)
-						const GF t12 = K2 * (u1 - u2), t13 = K2 * (u1 - u3), t24 = K2 * (u2 - u4), t34 = K2 * (u3 - u4);
-						P[k + 0 * m] =  u0 + u1 + u2 + u3 + u4;
-						P[k + 1 * m] = (u0 - u1 - K * t12 - t13 -     t14) * invr;
-						P[k + 2 * m] = (u0 - u3 + K * t13 + t23 -     t34) * invr2;
-						P[k + 3 * m] = (u0 - u2 +     t12 - t23 - K * t24) * invr3;
-						P[k + 4 * m] = (u0 - u4 +     t14 + t24 + K * t34) * invr4;
+						const GF u0 = P[k + 0 * m], u4 = P[k + 1 * m], u3 = P[k + 2 * m], u2 = P[k + 3 * m], u1 = P[k + 4 * m];
+
+						// const GF K3 = K * K2, K4 = K2 * K2;
+						// P[k + 0 * m] =  u0 +      u1 +      u2 +      u3 +      u4;
+						// P[k + 1 * m] = (u0 + K  * u1 + K2 * u2 + K3 * u3 + K4 * u4) * invr;
+						// P[k + 2 * m] = (u0 + K2 * u1 + K4 * u2 + K  * u3 + K3 * u4) * invr2;
+						// P[k + 3 * m] = (u0 + K3 * u1 + K  * u2 + K4 * u3 + K2 * u4) * invr3;
+						// P[k + 4 * m] = (u0 + K4 * u1 + K3 * u2 + K2 * u3 + K  * u4) * invr4;
+
+						const GF v1 = u1 + u4, v4 = u1 - u4, v2 = u2 + u3, v3 = u2 - u3;
+						const GF z0 = v1 + v2;
+						const GF x1 = u0, x2 = (v1 - v2) * F2, x3 = v3 * F3, x4 = v4 * F4, x5 = (v4 - v3) * F5;
+						const GF y1 = x1 + x2, y2 = x1 - x2, y3 = x3 + x5, y4 = x4 - x5;
+						const GF z1 = y1 + y4, z4 = y1 - y4, z2 = y2 + y3, z3 = y2 - y3;
+						P[k + 0 * m] =  z0 + u0;
+						P[k + 1 * m] = (z2 - u4) * invr;;
+						P[k + 2 * m] = (z4 - u2) * invr2;
+						P[k + 3 * m] = (z1 - u3) * invr3;
+						P[k + 4 * m] = (z3 - u1) * invr4;
 					}
 				}
 
